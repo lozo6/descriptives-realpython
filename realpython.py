@@ -355,3 +355,332 @@ z_with_nan.std(ddof=1)
 # differently, then apply the parameter skipna.
 
 ### SKEWNESS ###
+
+# The sample skewness measures the asymmetry of a data sample.
+
+# There are several mathematical definitions of skewness. One common expression to
+# calculate the skewness of the dataset 𝑥 with 𝑛 elements is (𝑛² / ((𝑛 − 1)(𝑛 − 2))) (Σᵢ(𝑥ᵢ − mean(𝑥))³ / (𝑛𝑠³)). 
+# A simpler expression is Σᵢ(𝑥ᵢ − mean(𝑥))³ 𝑛 / ((𝑛 − 1)(𝑛 − 2)𝑠³), where 𝑖 = 1, 2, …, 𝑛 and mean(𝑥) 
+# is the sample mean of 𝑥. The skewness defined like this is called the 
+# adjusted Fisher-Pearson standardized moment coefficient.
+
+# Once you’ve calculated the size of your dataset n, the sample mean mean_, and the standard 
+# deviation std_, you can get the sample skewness with pure Python:
+x = [8.0, 1, 2.5, 4, 28.0]
+n = len(x)
+mean_ = sum(x) / n
+var_ = sum((item - mean_)**2 for item in x) / (n - 1)
+std_ = var_ ** 0.5
+skew_ = (sum((item - mean_)**3 for item in x) * n / ((n - 1) * (n - 2) * std_**3))
+skew_
+# 1.9470432273905929 skew is positive, so x has a right-side tail
+
+# You can also calculate the sample skewness with scipy.stats.skew():
+y, y_with_nan = np.array(x), np.array(x_with_nan)
+scipy.stats.skew(y, bias=False)
+# 1.9470432273905927
+# scipy.stats.skew(y_with_nan, bias=False)
+# nan
+
+# The obtained result is the same as the pure Python implementation. The parameter bias is
+# set to False to enable the corrections for statistical bias. The optional parameter
+# nan_policy can take the values 'propagate', 'raise', or 'omit'. It allows you to control
+# how you’ll handle nan values.
+
+# Pandas Series objects have the method .skew() that also returns the skewness of a dataset:
+z, z_with_nan = pd.Series(x), pd.Series(x_with_nan)
+z.skew()
+# 1.9470432273905924
+z_with_nan.skew()
+# 1.9470432273905924
+
+# Like other methods, .skew() ignores nan values by default, 
+# because of the default value of the optional parameter skipna.
+
+### PERCENTILES ###
+
+# The sample 𝑝 percentile is the element in the dataset such that 𝑝% of the elements in the
+# dataset are less than or equal to that value. Also, (100 − 𝑝)% of the elements are greater than
+# or equal to that value. If there are two such elements in the dataset, then the sample 𝑝
+# percentile is their arithmetic mean. Each dataset has three quartiles, which are the
+# percentiles that divide the dataset into four parts:
+#   The first quartile is the sample 25th percentile. It divides roughly 25% of the smallest 
+#       items from the rest of the dataset.
+#   The second quartile is the sample 50th percentile or the median. Approximately 25%
+#       of the items lie between the first and second quartiles and another 25% between the 
+#       second and third quartiles.
+#   The third quartile is the sample 75th percentile. It divides roughly 25% of the largest
+#       items from the rest of the dataset.
+
+# Each part has approximately the same number of items. If you want to divide your data into
+# several intervals, then you can use statistics.quantiles():
+x = [-5.0, -1.1, 0.1, 2.0, 8.0, 12.8, 21.0, 25.8, 41.0]
+statistics.quantiles(x, n=2)
+# [8.0]
+statistics.quantiles(x, n=4, method='inclusive')
+# [0.1, 8.0, 21.0]
+
+# You can also use np.percentile() to determine any sample percentile in your dataset. For
+# example, this is how you can find the 5th and 95th percentiles:
+y = np.array(x)
+np.percentile(y, 5)
+# -3.44
+np.percentile(y, 95)
+# 34.919999999999995
+
+# percentile() takes several arguments. You have to provide the dataset as the first 
+# argument and the percentile value as the second. The dataset can be in the form of a NumPy 
+# array, list, tuple, or similar data structure. The percentile can be a number between 0 and 
+# 100 like in the example above, but it can also be a sequence of numbers:
+np.percentile(y, [25, 50, 75]) # calculates the 25th, 50th and 75th percentile
+# array([ 0.1,  8. , 21. ])
+np.median(y)
+# 8.0
+
+# If you want to ignore nan values, then use np.nanpercentile() instead:
+y_with_nan = np.insert(y, 2, np.nan)
+y_with_nan
+# array([-5. , -1.1,  nan,  0.1,  2. ,  8. , 12.8, 21. , 25.8, 41. ])
+np.nanpercentile(y_with_nan, [25, 50, 75])
+# array([ 0.1,  8. , 21. ])
+
+# NumPy also offers you very similar functionality in quantile() and nanquantile(). If you
+# use them, then you’ll need to provide the quantile values as the numbers between 0 and 1
+# instead of percentiles:
+np.quantile(y, 0.05)
+# -3.44
+np.quantile(y, 0.95)
+# 34.919999999999995
+np.quantile(y, [0.25, 0.5, 0.75])
+# array([ 0.1,  8. , 21. ])
+np.nanquantile(y_with_nan, [0.25, 0.5, 0.75])
+# array([ 0.1,  8. , 21. ])
+
+# pd.Series objects have the method .quantile():
+z, z_with_nan = pd.Series(y), pd.Series(y_with_nan)
+z.quantile(0.05)
+# -3.44
+z.quantile(0.95)
+# 34.919999999999995
+z.quantile([0.25, 0.5, 0.75])
+# 0.25     0.1
+# 0.50     8.0
+# 0.75    21.0
+# dtype: float64
+z_with_nan.quantile([0.25, 0.5, 0.75])
+# 0.25     0.1
+# 0.50     8.0
+# 0.75    21.0
+# dtype: float64
+
+### RANGES ###
+
+# The range of data is the difference between the maximum and minimum element in the 
+# dataset. You can get it with the function np.ptp():
+np.ptp(y)
+# 46.0
+np.ptp(z)
+# 46.0
+np.ptp(y_with_nan)
+# nan
+np.ptp(z_with_nan)
+# 46.0
+
+# Alternatively, you can use built-in Python, NumPy, or Pandas functions and methods 
+# to calculate the maxima and minima of sequences:
+#   max() and min() from the Python standard library
+#   amax() and amin() from NumPy
+#   nanmax() and nanmin() from NumPy to ignore nan values
+#   .max() and .min() from NumPy
+#   .max() and .min() from Pandas to ignore nan values by default
+
+np.amax(y) - np.amin(y)
+# 46.0
+np.nanmax(y_with_nan) - np.nanmin(y_with_nan)
+# 46.0
+y.max() - y.min()
+# 46.0
+z.max() - z.min()
+# 46.0
+z_with_nan.max() - z_with_nan.min()
+# 46.0
+
+# The interquartile range is the difference between the first and third quartile.
+# Once you calculate the quartiles, you can take their difference:
+quartiles = np.quantile(y, [0.25, 0.75])
+quartiles[1] - quartiles[0]
+# 20.9
+quartiles = z.quantile([0.25, 0.75])
+quartiles[0.75] - quartiles[0.25]
+# 20.9
+
+## Summary of Descriptive Statistics ##
+
+# SciPy and Pandas offer useful routines to quickly get descriptive statistics with a single 
+# function or method call. You can use scipy.stats.describe() like this:
+result = scipy.stats.describe(y, ddof=1, bias=False)
+print(result)
+
+# describe() returns an object that holds the following descriptive statistics:
+#   nobs: the number of observations or elements in your dataset
+#   minmax: the tuple with the minimum and maximum values of your dataset
+#   mean: the mean of your dataset
+#   variance: the variance of your dataset
+#   skewness: the skewness of your dataset
+#   kurtosis: the kurtosis of your dataset
+
+result.nobs
+# 9
+result.minmax[0]  # Min
+# -5.0
+result.minmax[1]  # Max
+# 41.0
+result.mean
+# 11.622222222222222
+result.variance
+# 228.75194444444446
+result.skewness
+# 0.9249043136685094
+result.kurtosis
+# 0.14770623629658886
+
+# Pandas has similar, if not better, functionality. Series objects have the method .describe():
+result = z.describe()
+result
+# count     9.000000
+# mean     11.622222
+# std      15.124548
+# min      -5.000000
+# 25%       0.100000
+# 50%       8.000000
+# 75%      21.000000
+# max      41.000000
+# dtype: float64
+
+# It returns a new Series that holds the following:
+#   count: the number of elements in your dataset
+#   mean: the mean of your dataset
+#   std: the standard deviation of your dataset
+#   min and max: the minimum and maximum values of your dataset
+#   25%, 50%, and 75%: the quartiles of your dataset
+
+# If you want the resulting Series object to contain other percentiles, then you should specify
+# the value of the optional parameter percentiles. You can access each item of result with its label:
+result['mean']
+# 11.622222222222222
+result['std']
+# 15.12454774346805
+result['min']
+# -5.0
+result['max']
+# 41.0
+result['25%']
+# 0.1
+result['50%']
+# 8.0
+result['75%']
+# 21.0
+
+## Measures of Correlation Between Pairs of Data ##
+
+# The two statistics that measure the correlation between datasets are covariance and the
+# correlation coefficient. Let’s define some data to work with these measures. You’ll create
+# two Python lists and use them to get corresponding NumPy arrays and Pandas Series:
+x = list(range(-10, 11))
+y = [0, 2, 2, 2, 2, 3, 3, 6, 7, 4, 7, 6, 6, 9, 4, 5, 5, 10, 11, 12, 14]
+x_, y_ = np.array(x), np.array(y)
+x__, y__ = pd.Series(x_), pd.Series(y_)
+
+## COVARIANCE ##
+
+# The sample covariance is a measure that quantifies the strength and direction of a
+# relationship between a pair of variables:
+
+n = len(x)
+mean_x, mean_y = sum(x) / n, sum(y) / n
+cov_xy = (sum((x[k] - mean_x) * (y[k] - mean_y) for k in range(n)) / (n - 1))
+cov_xy
+# 19.95
+
+# NumPy has the function cov() that returns the covariance matrix:
+cov_matrix = np.cov(x_, y_)
+cov_matrix
+# array([[38.5       , 19.95      ],
+#        [19.95      , 13.91428571]])
+
+# As you can see, the variances of x and y are equal to cov_matrix[0, 0] and 
+# cov_matrix[1, 1], respectively.
+x_.var(ddof=1)
+# 38.5
+y_.var(ddof=1)
+# 13.914285714285711
+
+cov_xy = cov_matrix[0, 1]
+cov_xy
+# 19.95
+cov_xy = cov_matrix[1, 0]
+cov_xy
+# 19.95
+
+# Pandas Series have the method .cov() that you can use to calculate the covariance:
+cov_xy = x__.cov(y__)
+cov_xy
+# 19.95
+cov_xy = y__.cov(x__)
+cov_xy
+# 19.95
+
+## CORRELATION COEFFICIENT ##
+
+# The value 𝑟 > 0 indicates positive correlation.
+# The value 𝑟 < 0 indicates negative correlation.
+# The value r = 1 is the maximum possible value of 𝑟. It corresponds to a perfect positive 
+#   linear relationship between variables.
+# The value r = −1 is the minimum possible value of 𝑟. It corresponds to a perfect 
+#   negative linear relationship between variables.
+# The value r ≈ 0, or when 𝑟 is around zero, means that the correlation between 
+#   variables is weak.
+
+var_x = sum((item - mean_x)**2 for item in x) / (n - 1)
+var_y = sum((item - mean_y)**2 for item in y) / (n - 1)
+std_x, std_y = var_x ** 0.5, var_y ** 0.5
+r = cov_xy / (std_x * std_y)
+r # 0.861950005631606
+
+# scipy.stats has the routine pearsonr() that calculates the correlation coefficient and the 𝑝-value:
+r, p = scipy.stats.pearsonr(x_, y_)
+r # 0.861950005631606
+p # 5.122760847201171e-07
+
+# Similar to the case of the covariance matrix, you can apply np.corrcoef() with x_ and y_ as 
+# the arguments and get the correlation coefficient matrix:
+corr_matrix = np.corrcoef(x_, y_)
+corr_matrix
+# array([[1.        , 0.86195001],
+    #    [0.86195001, 1.        ]])
+
+# The upper-left element is the correlation coefficient between x_ and x_. The lower-right 
+# element is the correlation coefficient between y_ and y_. Their values are equal to 1.0. The 
+# other two elements are equal and represent the actual correlation coefficient between x_ and y_:
+r = corr_matrix[0, 1]
+r # 0.8619500056316061
+r = corr_matrix[1, 0]
+r # 0.861950005631606
+
+# You can get the correlation coefficient with scipy.stats.linregress():
+scipy.stats.linregress(x_, y_)
+# LinregressResult(slope=0.5181818181818181, intercept=5.714285714285714, rvalue=0.861950005631606, pvalue=5.122760847201164e-07, stderr=0.06992387660074979)
+
+# linregress() takes x_ and y_, performs linear regression, and returns the results. slope
+# and intercept define the equation of the regression line, while rvalue is the correlation
+# coefficient. To access particular values from the result of linregress(), including the 
+# correlation coefficient, use dot notation:
+result = scipy.stats.linregress(x_, y_)
+r = result.rvalue
+r # 0.861950005631606
+
+# Pandas Series have the method .corr() for calculating the correlation coefficient:
+r = x__.corr(y__)
+r # 0.8619500056316061
+r = y__.corr(x__)
+r # 0.861950005631606
