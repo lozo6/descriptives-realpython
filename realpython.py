@@ -221,7 +221,7 @@ statistics.multimode([2, math.nan, 0, math.nan, 5])
 #You can also get the mode with scipy.stats.mode():
 u, v = np.array(u), np.array(v)
 mode_ = scipy.stats.mode(u)
-mode_
+print(mode_)
 # ModeResult(mode=array([2]), count=array([2]))
 mode_ = scipy.stats.mode(v)
 mode_
@@ -260,3 +260,98 @@ n = len(x)
 mean_ = sum(x) / n
 var_ = sum((item - mean_)**2 for item in x) / (n - 1)
 print(f'This is variance using pure Python, {var_}')
+
+# This approach is sufficient and calculates the sample variance well. However, the shorter
+# and more elegant solution is to call the existing function statistics.variance():
+var_ = statistics.variance(x)
+print(f'This is the variance using Statistics module, {var_}')
+
+# If you have nan values among your data, then statistics.variance() will return nan:
+statistics.variance(x_with_nan)
+# nan
+
+# You can also calculate the sample variance with NumPy. You should use the function
+# np.var() or the corresponding method .var():
+var_ = np.var(y, ddof=1)
+var_
+# 123.19999999999999
+var_ = y.var(ddof=1)
+var_
+# 123.19999999999999
+
+# It’s very important to specify the parameter ddof=1. That’s how you set the delta degrees of
+# freedom to 1. This parameter allows the proper calculation of 𝑠², with (𝑛 − 1) in the
+# denominator instead of 𝑛.
+
+# If you have nan values in the dataset, then np.var() and .var() will return nan:
+np.var(y_with_nan, ddof=1)
+# nan
+y_with_nan.var(ddof=1)
+# nan
+
+# This is consistent with np.mean() and np.average(). If you want to skip nan values, then you should use np.nanvar():
+np.nanvar(y_with_nan, ddof=1) #np.nanvar() ignores nan values. It also needs you to specify ddof=1.
+# 123.19999999999999
+
+# pd.Series objects have the method .var() that skips nan values by default:
+z.var(ddof=1)
+# 123.19999999999999
+z_with_nan.var(ddof=1)
+# 123.19999999999999
+
+# It also has the parameter ddof, but its default value is 1, so you can omit it. If you want a
+# different behavior related to nan values, then use the optional parameter skipna.
+
+# You calculate the population variance similarly to the sample variance. However, you have 
+# to use 𝑛 in the denominator instead of 𝑛 − 1: Σᵢ(𝑥ᵢ − mean(𝑥))² / 𝑛. In this case, 𝑛 is the 
+# number of items in the entire population. You can get the population variance similar to the 
+# sample variance, with the following differences:
+#   Replace (n - 1) with n in the pure Python implementation.
+#   Use statistics.pvariance() instead of statistics.variance().
+#   Specify the parameter ddof=0 if you use NumPy or Pandas. In NumPy, you can omit 
+#       ddof because its default value is 0.
+
+### STANDARD DEVIATION ###
+# The sample standard deviation is another measure of data spread. It’s connected to the
+# sample variance, as standard deviation, 𝑠, is the positive square root of the sample variance.
+# The standard deviation is often more convenient than the variance because it has the same
+# unit as the data points. Once you get the variance, you can calculate the standard deviation
+# with pure Python:
+
+std_ = var_ ** 0.5
+std_
+# 11.099549540409285
+
+# Although this solution works, you can also use statistics.stdev():
+std_ = statistics.stdev(x)
+std_
+# 11.099549540409287
+
+# You can get the standard deviation with NumPy in almost the same way. You can use the
+# function std() and the corresponding method .std() to calculate the standard deviation. If
+# there are nan values in the dataset, then they’ll return nan. To ignore nan values, you should 
+# use np.nanstd(). You use std(), .std(), and nanstd() from NumPy as you would use 
+# var(), .var(), and nanvar():
+np.std(y, ddof=1)
+# 11.099549540409285
+y.std(ddof=1)
+# 11.099549540409285
+np.std(y_with_nan, ddof=1)
+# nan
+y_with_nan.std(ddof=1)
+# nan
+np.nanstd(y_with_nan, ddof=1)
+# 11.099549540409285
+
+# Don’t forget to set the delta degrees of freedom to 1!
+
+# pd.Series objects also have the method .std() that skips nan by default:
+z.std(ddof=1)
+# 11.099549540409285
+z_with_nan.std(ddof=1)
+# 11.099549540409285
+
+# The parameter ddof defaults to 1, so you can omit it. Again, if you want to treat nan values
+# differently, then apply the parameter skipna.
+
+### SKEWNESS ###
